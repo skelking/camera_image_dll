@@ -236,7 +236,7 @@ CAMERA_IMAGE_DLL_API int _stdcall  startTakepicture(int list[], int length, CPP_
 		else
 		{
 			cout << "false";
-			open_project_failed(list[i]);//通知界面投影打开失败
+			open_project_failed(list[i]);//notify open project failed
 			break;
 			return -1;
 		}
