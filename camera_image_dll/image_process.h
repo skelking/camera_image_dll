@@ -11,13 +11,12 @@ using namespace std;
 using namespace cv;
 
 //自定义数据结构
-#define IMAGE_PATH "./test.jpg"
 #define  STANDARD_WIDTH  2048
 #define POLYGONEDGE  500
 #define EDGE 4
-//W_NUM,H_NUM  为融合带分割数量
-#define W_NUM  8
-#define  H_NUM  18
+
+//#define W_NUM  8
+#define  H_NUM  20  //融合带内小方块高度
 
 typedef std::map<int, bool> EdgeFlag;
 

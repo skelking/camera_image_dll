@@ -29,8 +29,8 @@ struct rect
 	CvPoint point3;
 };
 vector<rect>  vec_rect;    //存放投影区域坐标位置的数组
-vector<rect>  vec_single; //非融合区矩形块数组
-vector<rect>  vec_blend;  //融合区矩形块数组
+
+
 
 
 //download image
@@ -244,15 +244,23 @@ CAMERA_IMAGE_DLL_API int _stdcall  startTakepicture(int list[], int length, CPP_
 		cvNamedWindow("image", 0);
 		cvShowImage("image", my_process.resizeImage);
 		cvWaitKey(2000);
-
+		cvReleaseImage(&picture);
+		cvDestroyAllWindows();
 	}
 	return 1;
+	
 }
 
 CAMERA_IMAGE_DLL_API int _stdcall  color_recognise(int Large_area_num, int Small_areas_num)
 {
-	vector<rect>  singles;
-	vector<rect>  blends;
+	vector<rect>  vec_single; //非融合区小矩形块数组
+	vector<rect>  vec_blend;  //融合区小矩形块数组
+	vector<rect>  singles;//非融合区大矩形块
+	vector<rect>  blends;//融合区大矩形块
+
+	//存放融合区喝非熔合区小块内像素HSV均值的vector
+	vector<CvScalar>  vec_blend_hsv;
+	vector<CvScalar>  vec_single_hsv;
 
 	if (vec_rect.size() <= 1)
 	{
@@ -390,25 +398,96 @@ CAMERA_IMAGE_DLL_API int _stdcall  color_recognise(int Large_area_num, int Small
 			int len_of_side = distance - 4;//小块的边长
 			for (int m = 0; m < Small_areas_num; m++)
 			{
-				tem_rect.point0 = cvPoint(start.x + m*distance, start.y - len_of_side / 2);
-				tem_rect.point1 = cvPoint(start.x + m*distance, start.y + len_of_side / 2);
-				tem_rect.point2 = cvPoint(start.x + len_of_side + m*distance, start.y + len_of_side / 2);
-				tem_rect.point3 = cvPoint(start.x + len_of_side + m*distance, start.y - len_of_side / 2);
+				tem_rect.point0 = cvPoint(start.x + m*distance, start.y - H_NUM / 2);
+				tem_rect.point1 = cvPoint(start.x + m*distance, start.y + H_NUM / 2);
+				tem_rect.point2 = cvPoint(start.x + len_of_side + m*distance, start.y + H_NUM / 2);
+				tem_rect.point3 = cvPoint(start.x + len_of_side + m*distance, start.y - H_NUM / 2);
 				vec_blend.push_back(tem_rect);
 			}
 
 		}
 	}
 
-	////显示图片，以实现拍照后保存图片到本地的回调
-	//IplImage* picture = cvLoadImage("lena.jpg");
-	//cvNamedWindow("My picture", 1);
-	//cvShowImage("My picture", picture);
-	//cvWaitKey(2000);//等待2S打开投影机
-	//take_picture();
-	//cvWaitKey(1500);//等待1s保存图片
+	//判断target.jpg是否存在，若存在删除它
+	if (_access("target.jpg", 0) == 0)
+	{
+		int i = DeleteFile("target.jpg");
+		if (i == 1)
+			cout << "delete file sucess" << endl;
+		else
+			cout << "delete file failed" << endl;
+	}
+
+	//显示图片，以实现拍照后保存图片到本地的回调
+	IplImage* picture = cvLoadImage("lena.jpg");
+	cvNamedWindow("My picture", 1);
+	cvShowImage("My picture", picture);
+	cvWaitKey(2000);//等待2S打开投影机
+	take_picture();
+	cvWaitKey(1500);//等待1s保存图片
+
+	//读入目标图片，resize它
+	IplImage* color_image = cvLoadImage("resizeImage.jpg");
+	double resize_value = (double)color_image->width / (double)STANDARD_WIDTH;
+	int standard_height = (double)color_image->height / resize_value;
+	IplImage* resizeImage = cvCreateImage(cvSize(STANDARD_WIDTH, standard_height), color_image->depth, color_image->nChannels);
+	cvResize(color_image, resizeImage);
+
+	//将BGR颜色空间转换到HSV颜色空间
+	IplImage* hsv_image = cvCreateImage(cvGetSize(resizeImage), resizeImage->depth, resizeImage->nChannels);
+	cvCvtColor(resizeImage, hsv_image, CV_BGR2HSV);
+
+	//依次读取融合带、非融合带小矩形区域hsv均值
+	for (vector<rect>::size_type i = 0; i < vec_blend.size();i++)
+	{
+		
+		double H_all = 0, S_all = 0, V_all = 0;
+		int num = 0;
+		for (int w = vec_blend[i].point0.x; w <= vec_blend[i].point2.x;w++)
+		{
+			for (int h = vec_blend[i].point0.y; h <= vec_blend[i].point2.y;h++)
+			{
+				H_all += cvGet2D(hsv_image, w, h).val[0];
+				S_all += cvGet2D(hsv_image, w, h).val[1];
+				V_all += cvGet2D(hsv_image, w, h).val[2];
+				num++;
+			}
+		}
+		int H_value = H_all / (double)num + 0.5;
+		int S_value = S_all / (double)num + 0.5;
+		int V_value = V_all / (double)num + 0.5;
+		CvScalar  tem_scalar = cvScalar(H_value, S_value, V_value);
+		vec_blend_hsv.push_back(tem_scalar);
+	}
+
+	for (vector<rect>::size_type i = 0; i < vec_single.size(); i++)
+	{
+
+		double H_all = 0, S_all = 0, V_all = 0;
+		int num = 0;
+		for (int w = vec_single[i].point0.x; w <= vec_single[i].point2.x; w++)
+		{
+			for (int h = vec_single[i].point0.y; h <= vec_single[i].point2.y; h++)
+			{
+				H_all += cvGet2D(hsv_image, w, h).val[0];
+				S_all += cvGet2D(hsv_image, w, h).val[1];
+				V_all += cvGet2D(hsv_image, w, h).val[2];
+				num++;
+			}
+		}
+		int H_value = H_all / (double)num + 0.5;
+		int S_value = S_all / (double)num + 0.5;
+		int V_value = V_all / (double)num + 0.5;
+		CvScalar  tem_scalar = cvScalar(H_value, S_value, V_value);
+		CvScalar  hsv = cvScalar(0, 0, 0);
+		vec_single_hsv.push_back(tem_scalar);
+	}
 
 
+	cvReleaseImage(&color_image);
+	cvReleaseImage(&resizeImage);
+	cvReleaseImage(&hsv_image);
+	cvDestroyAllWindows();
 
 	return 1;
 }
