@@ -33,9 +33,6 @@
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="camera_image_dll.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\EDSDK.h">
       <Filter>头文件\include</Filter>
     </ClInclude>
@@ -51,12 +48,12 @@
     <ClInclude Include="camera_control.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="camera_image_dll.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="camera_image_dll.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="dllmain.cpp">
@@ -66,6 +63,9 @@
       <Filter>源文件\opencv</Filter>
     </ClCompile>
     <ClCompile Include="camera_control.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="camera_image_dll.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
