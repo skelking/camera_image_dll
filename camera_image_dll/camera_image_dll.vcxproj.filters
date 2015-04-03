@@ -51,6 +51,9 @@
     <ClInclude Include="camera_image_dll.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="hsvTobgr.h">
+      <Filter>头文件\opencv</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -67,6 +70,9 @@
     </ClCompile>
     <ClCompile Include="camera_image_dll.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="hsvTobgr.cpp">
+      <Filter>源文件\opencv</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

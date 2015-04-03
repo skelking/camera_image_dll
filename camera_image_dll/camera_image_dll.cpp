@@ -10,6 +10,7 @@
 #include "stdlib.h"
 #include "camera_image_dll.h"
 #include "camera_control.h"
+#include "hsvTobgr.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include "image_process.h"
@@ -479,8 +480,14 @@ CAMERA_IMAGE_DLL_API int _stdcall  color_recognise(int Large_area_num, int Small
 		int S_value = S_all / (double)num + 0.5;
 		int V_value = V_all / (double)num + 0.5;
 		CvScalar  tem_scalar = cvScalar(H_value, S_value, V_value);
-		CvScalar  hsv = cvScalar(0, 0, 0);
-		vec_single_hsv.push_back(tem_scalar);
+		hsvTobgr hsvtobgr(tem_scalar);
+		hsvtobgr.transfor();
+		CvScalar BGR = cvScalar(0, 0, 0);
+		if (hsvtobgr.istransfer)
+		{
+			BGR = hsvtobgr.BGR;
+		}
+		vec_single_hsv.push_back(BGR);
 	}
 
 
