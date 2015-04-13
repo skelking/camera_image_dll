@@ -31,6 +31,15 @@ struct rect
 };
 vector<rect>  vec_rect;    //存放投影区域坐标位置的数组
 
+//struct fusionBrightness
+struct fusionBrightness
+{
+	int r;
+	int g;
+	int b;
+	//fusionBrightness(int mr, int mg, int mb) :r(mr), g(mg), b(mb){}
+	
+};
 
 
 
@@ -252,7 +261,7 @@ CAMERA_IMAGE_DLL_API int _stdcall  startTakepicture(int list[], int length, CPP_
 	
 }
 
-CAMERA_IMAGE_DLL_API int _stdcall  color_recognise(int Large_area_num, int Small_areas_num)
+CAMERA_IMAGE_DLL_API int _stdcall  color_recognise(int Large_area_num, int Small_areas_num,fusionBrightness *boardlist,fusionBrightness (*fusionboardlist)[10])
 {
 	vector<rect>  vec_single; //非融合区小矩形块数组
 	vector<rect>  vec_blend;  //融合区小矩形块数组
@@ -260,8 +269,9 @@ CAMERA_IMAGE_DLL_API int _stdcall  color_recognise(int Large_area_num, int Small
 	vector<rect>  blends;//融合区大矩形块
 
 	//存放融合区喝非熔合区小块内像素HSV均值的vector
-	vector<CvScalar>  vec_blend_hsv;
-	vector<CvScalar>  vec_single_hsv;
+	vector<CvScalar>  vec_blend_rgb;
+	vector<CvScalar>  vec_single_rgb;
+
 
 	if (vec_rect.size() <= 1)
 	{
@@ -458,7 +468,7 @@ CAMERA_IMAGE_DLL_API int _stdcall  color_recognise(int Large_area_num, int Small
 		int S_value = S_all / (double)num + 0.5;
 		int V_value = V_all / (double)num + 0.5;
 		CvScalar  tem_scalar = cvScalar(H_value, S_value, V_value);
-		vec_blend_hsv.push_back(tem_scalar);
+		vec_blend_rgb.push_back(tem_scalar);
 	}
 
 	for (vector<rect>::size_type i = 0; i < vec_single.size(); i++)
@@ -487,9 +497,49 @@ CAMERA_IMAGE_DLL_API int _stdcall  color_recognise(int Large_area_num, int Small
 		{
 			BGR = hsvtobgr.BGR;
 		}
-		vec_single_hsv.push_back(BGR);
+		vec_single_rgb.push_back(BGR);
 	}
 
+	//////////////////////////////////////////////////////////////////////////
+	//将vector数据转换为数组和二维数组
+	fusionBrightness  singlelist[100];
+	for (vector<Scalar>::size_type i = 0; i < vec_single_rgb.size();i++)
+	{
+		Scalar  temp_rgb;
+		if (i%Large_area_num == 0)
+		{
+			Scalar  tem_rgb = vec_single_rgb[i / Large_area_num];
+		}
+		else
+		{
+			Scalar temp_rgb = vec_single_rgb[(i / Large_area_num)*Large_area_num + i%Large_area_num];
+		}
+		singlelist[i].r = temp_rgb[0];
+		singlelist[i].g = temp_rgb[1];
+		singlelist[i].b = temp_rgb[2];
+
+		*boardlist++ = singlelist[i];
+	}
+	
+	for (vector<Scalar>::size_type i = 0; i < vec_blend_rgb.size();i++)
+	{
+		int col, raw;
+		raw = i%Small_areas_num;
+		int j = i / Small_areas_num;
+		Scalar temp_rgb = vec_blend_rgb[i];
+		if (j%Large_area_num==0)
+		{
+			col = j/Large_area_num;
+		}
+		else
+		{
+			col = (j % 3) * 3 + j / 3;
+		}
+		fusionboardlist[col][raw].r = temp_rgb[0];
+		fusionboardlist[col][raw].g = temp_rgb[1];
+		fusionboardlist[col][raw].b = temp_rgb[2];
+	}
+	
 
 	cvReleaseImage(&color_image);
 	cvReleaseImage(&resizeImage);

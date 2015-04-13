@@ -87,9 +87,9 @@ CvScalar hsvTobgr::transfor_bgr(CvScalar normal_rgb)
 	int R = (red > 255) ? 255 : red;
 	R = (red < 0) ? 0 : red;
 
-	cv_bgr.val[0] = B;
+	cv_bgr.val[0] = R;
 	cv_bgr.val[1] = G;
-	cv_bgr.val[2] = R;
+	cv_bgr.val[2] = B;
 	return cv_bgr;
 }
 
